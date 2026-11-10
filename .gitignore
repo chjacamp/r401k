@@ -1,4 +1,4 @@
-# Statements and other personal files never belong here
+﻿# Statements and other personal files never belong here
 *.pdf
 
 # R and RStudio
@@ -7,6 +7,10 @@
 .Rproj.user/
 *.Rproj
 rsconnect/
+
+# Build output
+*.tar.gz
+*.Rcheck/
 
 # Local tooling
 .claude/

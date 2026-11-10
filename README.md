@@ -1,20 +1,43 @@
-# 401kR
+# r401k
 
-A small Shiny dashboard for 401(k) transaction data. It answers the question a 401(k) website should answer first: **how much of my balance came from what I put in, and how much came from the market?**
+An R package and Shiny dashboard for 401(k) transaction data. It answers the question a 401(k) website should answer first: **how much of my balance came from what I put in, and how much came from the market?**
 
-![The dashboard running on the repo's demo data](docs/dashboard.jpg)
+![The dashboard running on the package's demo data](docs/dashboard.jpg)
 
 ## Why this exists
 
 Some 401(k) dashboards show the change in your balance from one date to the next and report it as a percent. That counts every paycheck deposit as if it were investment return. A balance can be up 20% in a year the fund returned 10%, and the chart gives you no way to tell.
 
-This app rebuilds your account from its transactions and your fund's daily price, then keeps three different things separate:
+This package rebuilds your account from its transactions and your fund's daily price, then keeps three different things separate:
 
 - **Fund return:** what the fund itself did. Your deposits can't affect it.
 - **Your return:** a money-weighted return (XIRR) that reflects when your money actually arrived, net of plan fees.
 - **Balance change:** the misleading number, shown next to the others so you can see the gap.
 
 Any account you can describe as dated transactions in a single fund will work.
+
+## Install
+
+```r
+install.packages("remotes")
+remotes::install_github("chjacamp/r401k")
+```
+
+It needs R 4.1 or later.
+
+## Quick start
+
+```r
+r401k::run_app()
+```
+
+That opens the dashboard on the bundled demo: five years of made-up paychecks from a $0 start, priced against the real daily NAV of the Vanguard Target Retirement 2060 Trust Select (fund 1685).
+
+`run_app()` returns a Shiny app object, which runs when printed at the console. From a script or a terminal, use:
+
+```r
+shiny::runApp(r401k::run_app(), launch.browser = TRUE)
+```
 
 ## What's in the dashboard
 
@@ -23,22 +46,21 @@ Any account you can describe as dated transactions in a single fund will work.
 - **Projection:** retirement balance from your pay, raises, contribution rate, and yearly rate increases, compared across contribution rates.
 - **Method and checks:** what each number means, and optionally how the rebuilt history compares with balances from your statements.
 
-## Quick start
+## Use your own data
 
-The repo ships with demo data: five years of made-up paychecks from a $0 start, priced against the real daily NAV of the Vanguard Target Retirement 2060 Trust Select (fund 1685).
+Put two files in a folder of your own, then point the app at that folder:
 
 ```r
-install.packages(c("shiny", "bslib", "plotly", "DT", "dplyr", "scales"))
-shiny::runApp("401kR")   # path to this folder
+library(r401k)
+
+run_app(
+  "~/my401k",
+  fund_name = "My Target Date Fund",
+  plan = plan_settings(nonelective = 0.03, match_rate = 1, match_cap = 0.04, monthly_fee = 5)
+)
 ```
 
-It needs R 4.1 or later.
-
-## Use your own fund and data
-
-Everything the app reads is in `data/`. You need two files: daily prices and your transactions.
-
-**1. Add daily prices** as `data/nav_<your_fund_id>.csv`. The id is any name you like.
+**1. Daily prices** as `nav_<fund_id>.csv`. The id is any name you like.
 
 ```csv
 date,nav
@@ -48,16 +70,7 @@ date,nav
 
 `nav` has to be a total-return series, meaning it doesn't drop when the fund pays a distribution. Collective trusts usually qualify as published, because they reinvest internally. For a mutual fund or ETF, use an adjusted close, and don't also list reinvested distributions as transactions.
 
-**2. Point the app at your fund** by editing the top of `global.R`:
-
-```r
-FUND_ID   <- "your_fund_id"
-FUND_NAME <- "Your Fund Name"
-```
-
-The plan settings and projection defaults are in the same file. Leaving `annual_pay` and `your_rate` as `NA` infers them from your employer's non-elective contributions, if you have any.
-
-**3. Add your transactions** as `data/transactions.csv`:
+**2. Transactions** as `transactions.csv`:
 
 ```csv
 date,type,amount,source,holding
@@ -74,13 +87,18 @@ date,type,amount,source,holding
 | `source` | for deposits | Who funded it. Anything starting with `Employer` counts as employer money |
 | `holding` | no | `fund` (default) or `cash`. Dividends default to `cash` |
 
-A `transfer` moves money between cash and the fund; a positive amount moves it into the fund. Use `dividend` for interest on a cash position.
+A `transfer` moves money between cash and the fund; a positive amount moves it into the fund. Use `dividend` for interest on a cash position. Every balance, return, and chart is computed from these two files.
 
-Then run `shiny::runApp()` again. Every balance, return, and chart is computed from these two files.
+### Settings
+
+- `plan_settings()` describes your employer's contributions and fees. The non-elective rate is also used to infer your pay from employer contributions.
+- `projection_settings()` sets the projection tab's starting values, such as `retirement_year` and `expected_return`. Leaving `annual_pay` and `your_rate` as `NA` infers them from your data.
+
+See `?run_app`, `?plan_settings`, and `?projection_settings` for every option.
 
 ### Optional: check against your statements
 
-If you add `data/balances.csv` with balances copied from your statements, the checks tab compares them with the rebuilt history. That's a quick way to catch a missing or mistyped transaction. The app doesn't use this file for any calculation, and the demo doesn't include one.
+If you add `balances.csv` with balances copied from your statements, the checks tab compares them with the rebuilt history. That's a quick way to catch a missing or mistyped transaction. The app doesn't use this file for any calculation.
 
 ```csv
 date,balance,units,unit_price,reported_return
@@ -89,28 +107,36 @@ date,balance,units,unit_price,reported_return
 
 Only `date` and `balance` are required.
 
-### Fetching prices with your own function
+### Updating prices
 
-If you have a price source you're allowed to automate, wrap it in a function of `(start, end)` that returns `date` and `nav`. `update_nav()` requests only the missing dates and merges them into the right file.
+`update_nav()` takes any function of `(start, end)` that returns `date` and `nav`, requests only the dates missing from your price file, and merges them in. For example, from a file you downloaded:
 
 ```r
-source("global.R")
-
 from_my_download <- function(start, end) {
   x <- read.csv("~/Downloads/my_fund_prices.csv")
   data.frame(date = as.Date(x$Date, "%m/%d/%Y"), nav = x$Price)
 }
 
-update_nav("your_fund_id", from_my_download, first_needed = as.Date("2024-01-01"))
+update_nav("~/my401k", from_my_download, fund_id = "my_fund")
 ```
+
+### Working with the numbers in R
+
+```r
+x <- load_401k("~/my401k")
+x$quarters   # fund return, money-weighted return, and balance change by quarter
+x$daily      # one row per trading day: units, balance, deposits, market gain
+```
+
+### Trying it with your own fund's prices
+
+`make_demo_data()` writes the same kind of made-up history as the demo into any folder that has a price file, so you can see your fund in the dashboard before entering real transactions.
 
 ## Price data
 
-`data/nav_1685.csv` holds the trust's published daily NAV, included so the demo runs offline. The repo has no code that downloads prices. For your own fund, supply prices yourself or write a fetch function as described above, and check the terms of any source you automate, since many fund websites restrict automated access.
+The demo's price file is the trust's published daily NAV, included so the demo runs offline. The package has no code that downloads prices. For your own fund, supply prices yourself or through `update_nav()`, and check the terms of any source you automate, since many fund websites restrict automated access.
 
-## Keep your own data private
-
-Your transactions are personal. The `.gitignore` excludes PDFs, but files in `data/` are tracked because the demo data lives there, so keep your real data in a private copy rather than a public fork.
+Your data stays in your own folder. The package only reads it.
 
 ## How the numbers work
 
@@ -118,11 +144,9 @@ Each deposit buys units at the price on its date, and each fee sells units the s
 
 After your last transaction, units are held flat and priced daily, so later deposits don't appear until you add them.
 
-To regenerate the demo transactions, run `source("global.R"); make_demo_data()`.
-
 ## License
 
-[MIT](LICENSE), covering the code in this repo. It doesn't cover `data/nav_1685.csv`, which is the fund's published price history, or any third-party names.
+[MIT](LICENSE.md), covering the code in this package. It doesn't cover the demo's price file, which is the fund's published price history, or any third-party names.
 
 ## Disclaimer
 

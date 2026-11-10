@@ -114,18 +114,3 @@ infer_current_rate <- function(D, plan) {
   day <- D$ledger[D$ledger$date == latest & D$ledger$type == "contribution", ]
   sum(day$amount[day$who == "employee"]) / (sum(day$amount[is_nonelective(day$source)]) / plan$nonelective)
 }
-
-print_checks <- function(D) {
-  op <- options(width = 200, digits = 7)
-  on.exit(options(op))
-  cat(sprintf("%d transactions, %s to %s. Prices through %s.\n\n", nrow(D$transactions),
-              min(D$transactions$date), max(D$transactions$date), max(D$nav$date)))
-  if (!is.null(D$recon)) {
-    cat("Against data/balances.csv:\n")
-    print(as.data.frame(mutate(D$recon, across(where(is.numeric), ~ round(.x, 4)))))
-  }
-  cat("\nReturns by quarter:\n")
-  print(as.data.frame(D$quarters |>
-    transmute(period, fund = round(fund_return, 4), money_weighted = round(money_weighted, 4),
-              reported = reported_return, balance_change = round(naive_change, 4))))
-}

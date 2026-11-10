@@ -1,4 +1,40 @@
-# Turn transactions and prices into a daily account history --------------------
+#' Load and rebuild an account
+#'
+#' Reads `transactions.csv`, the price file, and the optional `balances.csv`
+#' from `data_dir`, then rebuilds the daily history that the dashboard shows.
+#' Use it to work with the numbers directly in R.
+#'
+#' @inheritParams read_nav
+#' @param plan Plan settings from [plan_settings()].
+#' @return A list with:
+#'   * `daily`: one row per trading day, with units, cash, balance, the day's
+#'     deposits by source, fees, and market gain.
+#'   * `quarters`: one row per calendar quarter, with fund return,
+#'     money-weighted return, and balance change.
+#'   * `ledger`: every transaction with its price and units.
+#'   * `sources`: balance by money source at each quarter end.
+#'   * `transactions`, `nav`, `balances`, `recon`, `fund_id`, and `data_through`.
+#' @export
+#' @examples
+#' x <- load_401k()
+#' tail(x$daily[, c("date", "balance", "market")])
+#' x$quarters[, c("period", "fund_return", "money_weighted", "naive_change")]
+load_401k <- function(data_dir = demo_data_dir(), fund_id = NULL, plan = plan_settings()) {
+  if (is.null(fund_id)) fund_id <- detect_fund_id(data_dir)
+  tx       <- read_transactions(data_dir)
+  nav      <- read_nav(data_dir, fund_id)
+  balances <- read_balances(data_dir)
+  ledger   <- build_ledger(tx, nav)
+  daily    <- build_daily(ledger, nav)
+  through  <- min(max(c(tx$date, balances$date)), max(nav$date))
+
+  D <- list(fund_id = fund_id, transactions = tx, nav = nav, balances = balances,
+            ledger = ledger, daily = daily, data_through = through)
+  D$quarters <- quarter_table(D, plan)
+  D$sources  <- source_balances(ledger, nav, D$quarters$end)
+  D$recon    <- reconciliation(D)
+  D
+}
 
 build_ledger <- function(tx, nav) {
   # Price each row on the first NAV date on or after it, which handles weekend
@@ -50,21 +86,4 @@ build_daily <- function(ledger, nav) {
       # so they earn nothing on the day they arrive.
       market     = coalesce(lag(units) * (nav - lag(nav)), 0) + dividends
     )
-}
-
-# Everything the dashboard needs, read fresh from data/.
-load_dashboard_data <- function(fund_id, plan, data_dir = "data") {
-  tx       <- read_transactions(data_dir)
-  nav      <- read_nav(fund_id, data_dir)
-  balances <- read_balances(data_dir)
-  ledger   <- build_ledger(tx, nav)
-  daily    <- build_daily(ledger, nav)
-  through  <- min(max(c(tx$date, balances$date)), max(nav$date))
-
-  D <- list(transactions = tx, nav = nav, balances = balances, ledger = ledger,
-            daily = daily, data_through = through)
-  D$quarters <- quarter_table(D, plan)
-  D$sources  <- source_balances(ledger, nav, D$quarters$end)
-  D$recon    <- reconciliation(D)
-  D
 }

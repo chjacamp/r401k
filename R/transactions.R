@@ -1,24 +1,32 @@
-# Input files in data/ --------------------------------------------------------
-#
-# transactions.csv (required). Columns:
-#   date     YYYY-MM-DD the money was actually priced (the "effective date")
-#   type     contribution, rollover, fee, withdrawal, dividend, or transfer
-#   amount   dollars; negative for withdrawals and normal fees
-#   source   who funded a contribution or rollover. Anything starting with
-#            "Employer" counts as employer money.
-#   holding  optional: fund (default) or cash. Dividends default to cash.
-#
-# A transfer moves money between cash and the fund; positive means into the fund.
-#
-# balances.csv (optional, used only for the checks tab). Columns: date, balance,
-# and optionally units, unit_price, reported_return.
-
 TX_TYPES <- c("contribution", "rollover", "fee", "withdrawal", "dividend", "transfer")
 
-read_transactions <- function(data_dir = "data") {
+#' Read your transactions
+#'
+#' Reads and checks `<data_dir>/transactions.csv`, the only input besides a
+#' price file. Its columns:
+#'
+#' * `date`: `YYYY-MM-DD`, the day the money was priced (the "effective date"
+#'   on a statement).
+#' * `type`: `contribution`, `rollover`, `fee`, `withdrawal`, `dividend`, or
+#'   `transfer`.
+#' * `amount`: dollars; negative for withdrawals and normal fees.
+#' * `source`: who funded a contribution or rollover. Anything starting with
+#'   "Employer" counts as employer money.
+#' * `holding`: optional, `fund` (default) or `cash`. Dividends default to `cash`.
+#'
+#' A `transfer` moves money between cash and the fund; a positive amount moves
+#' it into the fund. Use `dividend` for interest on a cash position.
+#'
+#' @inheritParams read_nav
+#' @return A data frame sorted by date, with a `who` column added
+#'   (`"employee"` or `"employer"`).
+#' @export
+#' @examples
+#' head(read_transactions(demo_data_dir()))
+read_transactions <- function(data_dir) {
   path <- file.path(data_dir, "transactions.csv")
   if (!file.exists(path)) {
-    stop("Missing ", path, ". See the README for the expected columns.", call. = FALSE)
+    stop("Missing ", path, ". See ?read_transactions for the expected columns.", call. = FALSE)
   }
   tx <- read.csv(path, stringsAsFactors = FALSE, colClasses = "character", na.strings = c("", "NA"))
   absent <- setdiff(c("date", "type", "amount"), names(tx))
@@ -58,7 +66,8 @@ read_transactions <- function(data_dir = "data") {
   tx[order(tx$date), c("date", "type", "amount", "source", "holding", "who")]
 }
 
-read_balances <- function(data_dir = "data") {
+# Optional balances copied from statements, used only by the checks tab.
+read_balances <- function(data_dir) {
   path <- file.path(data_dir, "balances.csv")
   if (!file.exists(path)) return(NULL)
   b <- read.csv(path, stringsAsFactors = FALSE)
