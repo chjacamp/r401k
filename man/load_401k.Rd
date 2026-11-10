@@ -7,7 +7,8 @@
 load_401k(
   data_dir = default_data_dir(),
   fund_id = NULL,
-  plan = plan_settings()
+  plan = plan_settings(),
+  tolerance = 1
 )
 }
 \arguments{
@@ -20,6 +21,9 @@ example in your \code{.Rprofile}.}
 \code{nav_*.csv} is used.}
 
 \item{plan}{Plan settings from \code{\link[=plan_settings]{plan_settings()}}.}
+
+\item{tolerance}{How far, in dollars, a rebuilt balance may miss a balance
+in \code{balances.csv} before that date is marked "Off".}
 }
 \value{
 A list with:
@@ -30,7 +34,10 @@ deposits by source, fees, and market gain.
 money-weighted return, and balance change.
 \item \code{ledger}: every transaction with its price and units.
 \item \code{sources}: balance by money source at each quarter end.
-\item \code{transactions}, \code{nav}, \code{balances}, \code{recon}, \code{fund_id}, and \code{data_through}.
+\item \code{recon}: each \code{balances.csv} date with a status of \code{"OK"} or \code{"Off"}.
+\item \code{warnings}: data problems, such as transactions priced long after their
+date or balances that don't reconcile. Each is also raised as an R warning.
+\item \code{transactions}, \code{nav}, \code{balances}, \code{fund_id}, and \code{data_through}.
 }
 }
 \description{

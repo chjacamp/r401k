@@ -10,6 +10,7 @@ run_app(
   fund_name = NULL,
   plan = plan_settings(),
   projection = projection_settings(),
+  tolerance = 1,
   ...
 )
 }
@@ -28,6 +29,9 @@ example in your \code{.Rprofile}.}
 
 \item{projection}{Starting values for the projection tab, from
 \code{\link[=projection_settings]{projection_settings()}}.}
+
+\item{tolerance}{How far, in dollars, a rebuilt balance may miss a balance
+in \code{balances.csv} before that date is marked "Off".}
 
 \item{...}{Options passed to \code{\link[shiny:shinyApp]{shiny::shinyApp()}}, such as \code{port} or
 \code{launch.browser}.}

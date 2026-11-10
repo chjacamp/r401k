@@ -15,7 +15,7 @@ app_ui <- function(ctx) {
     fillable = FALSE,
     theme = bs_theme(version = 5, bg = INK$page, fg = INK$primary, primary = HUE$you,
                      base_font = font_collection("system-ui", "-apple-system", "Segoe UI", "sans-serif")),
-    header = tags$head(tags$style(HTML(APP_CSS))),
+    header = tagList(tags$head(tags$style(HTML(APP_CSS))), uiOutput("warnings")),
 
     nav_panel("Performance",
       div(class = "period-row",
@@ -28,7 +28,7 @@ app_ui <- function(ctx) {
       uiOutput("tiles"),
       layout_columns(col_widths = c(8, 4),
         chart_card("Where the change in balance came from",
-                   "Bands are money added since the period began. The green area above them is what the market added.",
+                   "Bands are money added since the period began. Green above them is what the market added; red cutting into them is what it lost.",
                    plotlyOutput("balance_plot", height = "340px")),
         chart_card("What changed the balance",
                    "Each source over the selected period.",
@@ -49,10 +49,11 @@ app_ui <- function(ctx) {
 
     nav_panel("Quarters and ledger",
       chart_card("Quarter by quarter",
-                 "Built from data/transactions.csv and the daily price file.",
+                 "Built from transactions.csv and the daily price file.",
                  DT::dataTableOutput("quarter_table", height = "auto")),
       layout_columns(col_widths = c(5, 7),
-        chart_card("Balance by money source", "At each quarter end. Fees are spread in proportion to holdings.",
+        chart_card("Balance by money source",
+                   "Estimated at each quarter end: fees, withdrawals, and transfers are spread in proportion to holdings.",
                    plotlyOutput("source_plot", height = "360px")),
         chart_card("Every transaction", "Units are amount divided by that day's price.",
                    DT::dataTableOutput("ledger_table")))
@@ -98,10 +99,10 @@ app_ui <- function(ctx) {
         if (is.null(D$balances)) {
           card(class = "chart-card", card_body(
             div(class = "card-title-text", "Does this tie out?"),
-            div(class = "card-sub", "Optional: add data/balances.csv with balances from your statements (date, balance) and this tab compares them with the rebuilt history.")))
+            div(class = "card-sub", "Optional: add balances.csv to your data folder, with balances from your statements (date, balance) and this tab compares them with the rebuilt history.")))
         } else {
           chart_card("Does this tie out?",
-                     "The rebuilt history compared with data/balances.csv.",
+                     "The rebuilt history compared with balances.csv.",
                      DT::dataTableOutput("recon_table", height = "auto"))
         },
         card(class = "chart-card", card_body(uiOutput("method")))

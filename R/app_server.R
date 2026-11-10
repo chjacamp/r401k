@@ -14,6 +14,13 @@ app_server <- function(ctx) {
 
   function(input, output, session) {
 
+    output$warnings <- renderUI({
+      if (!length(D$warnings)) return(NULL)
+      div(class = "data-warning",
+          tags$b("Check your data"),
+          tags$ul(lapply(D$warnings, tags$li)))
+    })
+
     range_sel <- reactive({
       end <- last_nav_date
       if (input$period == "Custom") {
@@ -81,20 +88,34 @@ app_server <- function(ctx) {
       lv <- win() |>
         transmute(date, roll = cumsum(rollover), you = cumsum(employee), er = cumsum(employer),
                   change = balance - s$begin, balance) |>
-        mutate(y1 = roll, y2 = y1 + you, y3 = y2 + er, gain = change - y3, y4 = pmax(change, y3))
-      band <- function(p, y, name, color, value, fill = "tonexty") {
+        mutate(y1 = roll, y2 = y1 + you, y3 = y2 + er, gain = change - y3,
+               y4 = pmax(change, y3), y_loss = pmin(change, y3))
+      area <- function(p, y, name, color, value, fill = "tonexty", width = 1.5) {
         add_trace(p, data = lv, x = ~date, y = y, type = "scatter", mode = "lines", name = name,
-                  line = list(color = color, width = 1.5), fill = fill,
+                  line = list(color = color, width = width), fill = fill,
                   fillcolor = wash(color, 0.22), customdata = value,
                   hovertemplate = paste0(name, ": %{customdata:$,.0f}<extra></extra>"))
       }
       has_roll <- s$rollover > 0
       p <- plot_ly()
-      if (has_roll) p <- band(p, ~y1, "Rollover", HUE$start, ~roll, "tozeroy")
+      if (has_roll) p <- area(p, ~y1, "Rollover", HUE$start, ~roll, "tozeroy")
       p <- p |>
-        band(~y2, "Your contributions", HUE$you, ~you, if (has_roll) "tonexty" else "tozeroy") |>
-        band(~y3, "Employer contributions", HUE$employer, ~er) |>
-        band(~y4, "Market gain", HUE$market, ~gain) |>
+        area(~y2, "Your contributions", HUE$you, ~you, if (has_roll) "tonexty" else "tozeroy") |>
+        area(~y3, "Employer contributions", HUE$employer, ~er)
+      if (any(lv$change < lv$y3)) {
+        # Where the market lost money, shade from the top of the deposits down
+        # to the net change line, then restore the deposits' top edge so the
+        # gain band below fills from the right baseline.
+        p <- p |>
+          add_trace(data = lv, x = ~date, y = ~y_loss, type = "scatter", mode = "lines",
+                    name = "Market loss", line = list(color = HUE$loss, width = 0),
+                    fill = "tonexty", fillcolor = wash(HUE$loss, 0.28), hoverinfo = "skip") |>
+          add_trace(data = lv, x = ~date, y = ~y3, type = "scatter", mode = "lines",
+                    line = list(color = "rgba(0,0,0,0)", width = 0), showlegend = FALSE,
+                    hoverinfo = "skip")
+      }
+      p <- p |>
+        area(~y4, "Market gain", HUE$market, ~gain, width = 0) |>
         add_trace(data = lv, x = ~date, y = ~change, type = "scatter", mode = "lines",
                   name = "Net change", line = list(color = INK$primary, width = 2),
                   customdata = ~balance,
@@ -341,9 +362,10 @@ app_server <- function(ctx) {
     })
 
     output$recon_table <- DT::renderDataTable({
-      validate(need(!is.null(D$recon), "Add data/balances.csv (date, balance) to compare against reported balances."))
+      validate(need(!is.null(D$recon), "Add balances.csv (date, balance) to compare against reported balances."))
       tab <- D$recon |>
-        transmute(Date = date, `Reported balance` = reported_balance, `Rebuilt balance` = rebuilt_balance,
+        transmute(Date = date, Status = status,
+                  `Reported balance` = reported_balance, `Rebuilt balance` = rebuilt_balance,
                   `Balance difference` = balance_diff, `Reported units` = reported_units,
                   `Rebuilt units` = rebuilt_units, `Units difference` = units_diff,
                   `Reported price` = reported_price, `Price file` = file_price)

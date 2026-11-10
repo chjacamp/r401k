@@ -10,6 +10,8 @@
 #'   isn't set. Set it once with `options(r401k.data_dir = "~/my401k")`, for
 #'   example in your `.Rprofile`.
 #' @param plan Plan settings from [plan_settings()].
+#' @param tolerance How far, in dollars, a rebuilt balance may miss a balance
+#'   in `balances.csv` before that date is marked "Off".
 #' @return A list with:
 #'   * `daily`: one row per trading day, with units, cash, balance, the day's
 #'     deposits by source, fees, and market gain.
@@ -17,13 +19,17 @@
 #'     money-weighted return, and balance change.
 #'   * `ledger`: every transaction with its price and units.
 #'   * `sources`: balance by money source at each quarter end.
-#'   * `transactions`, `nav`, `balances`, `recon`, `fund_id`, and `data_through`.
+#'   * `recon`: each `balances.csv` date with a status of `"OK"` or `"Off"`.
+#'   * `warnings`: data problems, such as transactions priced long after their
+#'     date or balances that don't reconcile. Each is also raised as an R warning.
+#'   * `transactions`, `nav`, `balances`, `fund_id`, and `data_through`.
 #' @export
 #' @examples
 #' x <- load_401k()
 #' tail(x$daily[, c("date", "balance", "market")])
 #' x$quarters[, c("period", "fund_return", "money_weighted", "naive_change")]
-load_401k <- function(data_dir = default_data_dir(), fund_id = NULL, plan = plan_settings()) {
+load_401k <- function(data_dir = default_data_dir(), fund_id = NULL, plan = plan_settings(),
+                      tolerance = 1) {
   if (is.null(fund_id)) fund_id <- detect_fund_id(data_dir)
   tx       <- read_transactions(data_dir)
   nav      <- read_nav(data_dir, fund_id)
@@ -36,7 +42,9 @@ load_401k <- function(data_dir = default_data_dir(), fund_id = NULL, plan = plan
             ledger = ledger, daily = daily, data_through = through)
   D$quarters <- quarter_table(D, plan)
   D$sources  <- source_balances(ledger, nav, D$quarters$end)
-  D$recon    <- reconciliation(D)
+  D$recon    <- reconciliation(D, tolerance)
+  D$warnings <- data_warnings(D, tolerance)
+  for (w in D$warnings) warning(w, call. = FALSE)
   D
 }
 

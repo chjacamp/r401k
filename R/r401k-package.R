@@ -18,6 +18,6 @@ utils::globalVariables(c(
   "file_price", "fund_amount", "fund_return", "fund_value", "growth", "holding", "market",
   "money_weighted", "month", "naive_change", "nav", "nav_end", "nonelective", "pay", "period",
   "price_date", "rate", "rebuilt_balance", "rebuilt_units", "reported_balance", "reported_price",
-  "reported_return", "reported_units", "roll", "rollover", "start", "this_year", "today", "type",
+  "reported_return", "reported_units", "roll", "rollover", "start", "status", "this_year", "today", "type",
   "units", "units_diff", "value", "who", "withdrawals", "y1", "y2", "y3", "year", "you"
 ))

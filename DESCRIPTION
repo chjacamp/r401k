@@ -1,6 +1,6 @@
 Package: r401k
 Title: Separate 401(k) Deposits from Market Returns
-Version: 0.1.2
+Version: 0.2.0
 Authors@R: person("chjacamp", role = c("aut", "cre"),
     email = "13806192+chjacamp@users.noreply.github.com")
 Description: A Shiny dashboard that rebuilds a 401(k) account from dated
@@ -23,6 +23,9 @@ Imports:
     shiny (>= 1.7.0),
     stats,
     utils
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3

@@ -1,11 +1,19 @@
 # Return math -------------------------------------------------------------------
 
+# Annualized money-weighted return. Solves for z = log(1 + r) rather than r,
+# so the search can never step below -100%, where the math breaks down; short
+# windows with losses annualize to returns close to that edge. Returns NA when
+# the flows don't change sign or no rate makes them net to zero. Deposits
+# followed by a final balance have exactly one answer; repeated withdrawals
+# between deposits could in principle have more than one.
 xirr <- function(dates, flows) {
   if (length(flows) < 2 || all(flows >= 0) || all(flows <= 0)) return(NA_real_)
   t <- as.numeric(dates - min(dates)) / 365.25
-  f <- function(r) sum(flows / (1 + r)^t)
-  tryCatch(uniroot(f, c(-0.95, 20), tol = 1e-9, extendInt = "yes")$root,
-           error = function(e) NA_real_)
+  npv <- function(z) sum(flows * exp(-z * t))
+  z <- tryCatch(uniroot(npv, c(-1, 1), extendInt = "yes", tol = 1e-12, maxiter = 1000)$root,
+                error = function(e) NA_real_)
+  if (is.na(z) || abs(npv(z)) > 1e-6 * sum(abs(flows))) return(NA_real_)
+  exp(z) - 1
 }
 
 # Everything the dashboard reports for a date range.

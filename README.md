@@ -115,7 +115,7 @@ See `?run_app`, `?plan_settings`, and `?projection_settings` for every option.
 
 ### Optional: check against your statements
 
-If you add `balances.csv` with balances copied from your statements, the checks tab compares them with the rebuilt history. That's a quick way to catch a missing or mistyped transaction. The app doesn't use this file for any calculation.
+If you add `balances.csv` with balances copied from your statements, the checks tab compares them with the rebuilt history. That's a quick way to catch a missing or mistyped transaction. Any date where the rebuilt balance misses by more than $1 is marked "Off" and flagged at the top of the dashboard; change the threshold with `run_app(..., tolerance = 5)`. The app doesn't use this file for any calculation.
 
 ```csv
 date,balance,units,unit_price,reported_return
@@ -160,6 +160,10 @@ Your data stays in your own folder. The package only reads it.
 Each deposit buys units at the price on its date, and each fee sells units the same way. Daily market gain is yesterday's units times today's price change, plus any cash interest. The fund's return comes only from its prices. Your return is the rate that makes your dated cash flows equal your ending balance.
 
 After your last transaction, units are held flat and priced daily, so later deposits don't appear until you add them.
+
+Transactions dated on a weekend or holiday are priced on the next trading day. If a transaction waits more than 4 days for a price, the dashboard flags it, since that usually means the price file is missing days.
+
+Balances by money source are an estimate. Transactions say who funded each deposit, but not which source a fee, withdrawal, or transfer came out of, so those are spread in proportion to what each source holds.
 
 ## License
 

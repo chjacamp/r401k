@@ -31,8 +31,9 @@
 #'   run_app()                          # now opens ~/my401k
 #' }
 run_app <- function(data_dir = default_data_dir(), fund_id = NULL, fund_name = NULL,
-                    plan = plan_settings(), projection = projection_settings(), ...) {
-  ctx <- app_context(data_dir, fund_id, fund_name, plan, projection)
+                    plan = plan_settings(), projection = projection_settings(),
+                    tolerance = 1, ...) {
+  ctx <- app_context(data_dir, fund_id, fund_name, plan, projection, tolerance)
   shiny::shinyApp(ui = app_ui(ctx), server = app_server(ctx), options = list(...))
 }
 
@@ -91,9 +92,9 @@ projection_settings <- function(annual_pay = NA, your_rate = NA, raise = 3, rate
 }
 
 # Everything the UI and server need, computed once when the app is built.
-app_context <- function(data_dir, fund_id, fund_name, plan, projection) {
+app_context <- function(data_dir, fund_id, fund_name, plan, projection, tolerance = 1) {
   data_dir <- normalizePath(path.expand(data_dir), winslash = "/", mustWork = TRUE)
-  D <- load_401k(data_dir, fund_id, plan)
+  D <- load_401k(data_dir, fund_id, plan, tolerance)
   is_demo <- identical(data_dir, normalizePath(demo_data_dir(), winslash = "/"))
   if (is.null(fund_name)) {
     fund_name <- if (D$fund_id == "1685") "Vanguard Target Retirement 2060 Trust Select" else D$fund_id

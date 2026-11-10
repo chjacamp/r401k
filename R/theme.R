@@ -5,7 +5,7 @@ INK <- list(primary = "#0b0b0b", secondary = "#52514e", muted = "#898781",
 
 # One color per kind of money, the same in every chart.
 HUE <- list(you = "#2a78d6", you_light = "#86b6ef", employer = "#eb6834",
-            employer_light = "#f4b08f", market = "#1baf7a", start = "#c3c2b7")
+            employer_light = "#f4b08f", market = "#1baf7a", loss = "#e34948", start = "#c3c2b7")
 
 FONT <- "system-ui, -apple-system, 'Segoe UI', sans-serif"
 
@@ -100,6 +100,9 @@ APP_CSS <- sprintf("
   .stat-list .k { color: %s; }
   .method p, .method li { max-width: 62rem; }
   table.dataTable td, table.dataTable th { font-variant-numeric: tabular-nums; font-size: .86rem; white-space: nowrap; }
+  .data-warning { border-left: 3px solid #fab219; background: #fffaf0; border-radius: 6px;
+    padding: 10px 14px; margin: 8px 0 12px; font-size: .88rem; color: #0b0b0b; }
+  .data-warning ul { margin: 4px 0 0; padding-left: 18px; }
 ", FONT, INK$grid, INK$surface, INK$secondary, INK$primary, INK$primary, HUE$you,
    INK$primary, INK$secondary, INK$surface, INK$secondary, INK$primary, INK$secondary,
    INK$surface, INK$primary, INK$secondary, INK$primary, INK$secondary)
