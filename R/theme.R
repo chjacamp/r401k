@@ -42,11 +42,11 @@ stat_list <- function(rows) {
   }))
 }
 
-style_plot <- function(p, y_format = "$~s", hover = "x unified", legend = TRUE) {
+style_plot <- function(p, y_format = "$~s", hover = "x unified", legend = TRUE, filename = "r401k-chart") {
   p |>
     layout(
       font = list(family = FONT, size = 12, color = INK$secondary),
-      paper_bgcolor = "rgba(0,0,0,0)", plot_bgcolor = "rgba(0,0,0,0)",
+      paper_bgcolor = INK$surface, plot_bgcolor = INK$surface,
       margin = list(l = 52, r = 20, t = 10, b = 32),
       hovermode = hover,
       hoverlabel = list(bgcolor = INK$surface, bordercolor = INK$grid,
@@ -59,7 +59,9 @@ style_plot <- function(p, y_format = "$~s", hover = "x unified", legend = TRUE) 
       legend = list(orientation = "h", x = 0, y = 1.13, xanchor = "left",
                     font = list(size = 12, color = INK$secondary))
     ) |>
-    config(displayModeBar = FALSE)
+    # Only the camera button, shown on hover, so charts can be saved as PNGs.
+    config(modeBarButtons = list(list("toImage")), displaylogo = FALSE,
+           toImageButtonOptions = list(format = "png", filename = filename, scale = 2))
 }
 
 data_marker <- function(p, when) {

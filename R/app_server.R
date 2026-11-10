@@ -98,7 +98,7 @@ app_server <- function(ctx) {
                   name = "Net change", line = list(color = INK$primary, width = 2),
                   customdata = ~balance,
                   hovertemplate = "Net change: %{y:$,.0f}<br>Balance: %{customdata:$,.0f}<extra></extra>") |>
-        style_plot()
+        style_plot(filename = "change-in-balance")
       if (s$end > data_through && s$base_date < data_through) p <- data_marker(p, data_through)
       p
     })
@@ -116,7 +116,7 @@ app_server <- function(ctx) {
               marker = list(color = d$color), text = signed(d$value), textposition = "outside",
               textfont = list(color = INK$primary, size = 12), cliponaxis = FALSE,
               hovertemplate = "%{y}: %{x:$,.2f}<extra></extra>") |>
-        style_plot(hover = "closest", legend = FALSE) |>
+        style_plot(hover = "closest", legend = FALSE, filename = "what-changed-the-balance") |>
         layout(margin = list(l = 138, r = 12, t = 6, b = 28), bargap = 0.6,
                xaxis = list(range = c(min(0, min(d$value)) - pad, max(0, max(d$value)) + pad),
                             tickformat = "$~s", showgrid = TRUE, gridcolor = INK$grid,
@@ -139,10 +139,10 @@ app_server <- function(ctx) {
         p |>
           add_lines(y = ~naive, name = "Balance change", line = list(color = INK$secondary, width = 2),
                     hovertemplate = "Balance change: %{y:.2%}<extra></extra>") |>
-          style_plot(y_format = ".0%")
+          style_plot(y_format = ".0%", filename = "fund-return-vs-balance-change")
       } else {
         p |>
-          style_plot(y_format = ".0%", legend = FALSE) |>
+          style_plot(y_format = ".0%", legend = FALSE, filename = "fund-return-vs-balance-change") |>
           layout(annotations = list(list(
             x = 0.02, y = 0.98, xref = "paper", yref = "paper", xanchor = "left", showarrow = FALSE,
             text = "Balance change is hidden here because this period includes a rollover or starts from $0.",
@@ -163,7 +163,7 @@ app_server <- function(ctx) {
         bars(~you, "You", HUE$you) |>
         bars(~er, "Employer", HUE$employer) |>
         bars(~market, "Market", HUE$market) |>
-        style_plot() |>
+        style_plot(filename = "monthly-deposits-and-market") |>
         layout(barmode = "relative", bargap = 0.35,
                xaxis = list(type = "date", tickformat = "%b %y", dtick = if (nrow(m) > 14) "M3" else "M1"))
     })
@@ -259,7 +259,7 @@ app_server <- function(ctx) {
                       marker = list(color = unname(colors[k]), line = list(color = INK$surface, width = 1)),
                       hovertemplate = paste0(k, ": %{y:$,.0f}<extra></extra>"))
       }
-      p |> style_plot() |> layout(barmode = "stack", bargap = 0.45, legend = list(y = 1.18))
+      p |> style_plot(filename = "balance-by-source") |> layout(barmode = "stack", bargap = 0.45, legend = list(y = 1.18))
     })
 
     # Projection
@@ -314,7 +314,7 @@ app_server <- function(ctx) {
         band(~y4, "Investment growth", HUE$market, ~growth) |>
         line(edge(low_run()), sprintf("At %s", pct1((input$p_ret - input$p_spread) / 100))) |>
         line(edge(high_run()), sprintf("At %s", pct1((input$p_ret + input$p_spread) / 100))) |>
-        style_plot() |>
+        style_plot(filename = "projected-balance") |>
         layout(legend = list(y = 1.12), xaxis = list(dtick = 5, tickformat = "d"))
     })
 
