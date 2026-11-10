@@ -1,0 +1,12 @@
+# Statements and other personal files never belong here
+*.pdf
+
+# R and RStudio
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+rsconnect/
+
+# Local tooling
+.claude/
