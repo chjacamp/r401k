@@ -5,7 +5,7 @@
 \title{Run the 401(k) dashboard}
 \usage{
 run_app(
-  data_dir = demo_data_dir(),
+  data_dir = default_data_dir(),
   fund_id = NULL,
   fund_name = NULL,
   plan = plan_settings(),
@@ -14,7 +14,10 @@ run_app(
 )
 }
 \arguments{
-\item{data_dir}{Folder holding your \code{transactions.csv} and price file.}
+\item{data_dir}{Folder holding your \code{transactions.csv} and price file.
+Defaults to the \code{r401k.data_dir} option, or the bundled demo if that
+isn't set. Set it once with \code{options(r401k.data_dir = "~/my401k")}, for
+example in your \code{.Rprofile}.}
 
 \item{fund_id}{Id in the price file's name. If \code{NULL}, the folder's only
 \code{nav_*.csv} is used.}
@@ -36,13 +39,24 @@ the console opens the dashboard. From a script, use
 }
 \description{
 Rebuilds your account from the files in \code{data_dir} and returns the
-dashboard as a Shiny app. With no arguments it runs on the bundled demo:
-five years of made-up paychecks priced against the published daily NAV of
-the Vanguard Target Retirement 2060 Trust Select.
+dashboard as a Shiny app. With no arguments it opens the folder named by the
+\code{r401k.data_dir} option, or the bundled demo if that option isn't set: five
+years of made-up paychecks priced against the published daily NAV of the
+Vanguard Target Retirement 2060 Trust Select.
+}
+\details{
+Keep your data in a folder of your own, not inside the installed package,
+which is replaced whenever the package is reinstalled. \code{\link[=use_example_data]{use_example_data()}}
+starts one from the demo files.
 }
 \examples{
 if (interactive()) {
-  run_app()
+  run_app()                          # the demo
+
+  use_example_data("~/my401k")       # a copy you can edit
   run_app("~/my401k", plan = plan_settings(match_cap = 0.01))
+
+  options(r401k.data_dir = "~/my401k")
+  run_app()                          # now opens ~/my401k
 }
 }

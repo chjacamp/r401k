@@ -4,10 +4,17 @@
 \alias{load_401k}
 \title{Load and rebuild an account}
 \usage{
-load_401k(data_dir = demo_data_dir(), fund_id = NULL, plan = plan_settings())
+load_401k(
+  data_dir = default_data_dir(),
+  fund_id = NULL,
+  plan = plan_settings()
+)
 }
 \arguments{
-\item{data_dir}{Folder holding your \code{transactions.csv} and price file.}
+\item{data_dir}{Folder holding your \code{transactions.csv} and price file.
+Defaults to the \code{r401k.data_dir} option, or the bundled demo if that
+isn't set. Set it once with \code{options(r401k.data_dir = "~/my401k")}, for
+example in your \code{.Rprofile}.}
 
 \item{fund_id}{Id in the price file's name. If \code{NULL}, the folder's only
 \code{nav_*.csv} is used.}

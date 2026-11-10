@@ -15,7 +15,10 @@ make_demo_data(
 )
 }
 \arguments{
-\item{data_dir}{Folder holding your \code{transactions.csv} and price file.}
+\item{data_dir}{Folder holding your \code{transactions.csv} and price file.
+Defaults to the \code{r401k.data_dir} option, or the bundled demo if that
+isn't set. Set it once with \code{options(r401k.data_dir = "~/my401k")}, for
+example in your \code{.Rprofile}.}
 
 \item{fund_id}{Id in the price file's name. If \code{NULL}, the folder's only
 \code{nav_*.csv} is used.}

@@ -1,9 +1,14 @@
 #' Run the 401(k) dashboard
 #'
 #' Rebuilds your account from the files in `data_dir` and returns the
-#' dashboard as a Shiny app. With no arguments it runs on the bundled demo:
-#' five years of made-up paychecks priced against the published daily NAV of
-#' the Vanguard Target Retirement 2060 Trust Select.
+#' dashboard as a Shiny app. With no arguments it opens the folder named by the
+#' `r401k.data_dir` option, or the bundled demo if that option isn't set: five
+#' years of made-up paychecks priced against the published daily NAV of the
+#' Vanguard Target Retirement 2060 Trust Select.
+#'
+#' Keep your data in a folder of your own, not inside the installed package,
+#' which is replaced whenever the package is reinstalled. [use_example_data()]
+#' starts one from the demo files.
 #'
 #' @inheritParams load_401k
 #' @param fund_name Name shown in the app. Defaults to `fund_id`.
@@ -17,10 +22,15 @@
 #' @export
 #' @examples
 #' if (interactive()) {
-#'   run_app()
+#'   run_app()                          # the demo
+#'
+#'   use_example_data("~/my401k")       # a copy you can edit
 #'   run_app("~/my401k", plan = plan_settings(match_cap = 0.01))
+#'
+#'   options(r401k.data_dir = "~/my401k")
+#'   run_app()                          # now opens ~/my401k
 #' }
-run_app <- function(data_dir = demo_data_dir(), fund_id = NULL, fund_name = NULL,
+run_app <- function(data_dir = default_data_dir(), fund_id = NULL, fund_name = NULL,
                     plan = plan_settings(), projection = projection_settings(), ...) {
   ctx <- app_context(data_dir, fund_id, fund_name, plan, projection)
   shiny::shinyApp(ui = app_ui(ctx), server = app_server(ctx), options = list(...))
@@ -80,29 +90,19 @@ projection_settings <- function(annual_pay = NA, your_rate = NA, raise = 3, rate
        irs_limit_growth = irs_limit_growth)
 }
 
-#' Folder holding the demo data
-#'
-#' @return Path to the bundled demo `transactions.csv` and `nav_1685.csv`.
-#' @export
-#' @examples
-#' list.files(demo_data_dir())
-demo_data_dir <- function() {
-  system.file("extdata", package = "r401k", mustWork = TRUE)
-}
-
 # Everything the UI and server need, computed once when the app is built.
 app_context <- function(data_dir, fund_id, fund_name, plan, projection) {
   data_dir <- normalizePath(path.expand(data_dir), winslash = "/", mustWork = TRUE)
   D <- load_401k(data_dir, fund_id, plan)
+  is_demo <- identical(data_dir, normalizePath(demo_data_dir(), winslash = "/"))
   if (is.null(fund_name)) {
-    is_demo <- identical(data_dir, normalizePath(demo_data_dir(), winslash = "/"))
-    fund_name <- if (is_demo) "Vanguard Target Retirement 2060 Trust Select" else D$fund_id
+    fund_name <- if (D$fund_id == "1685") "Vanguard Target Retirement 2060 Trust Select" else D$fund_id
   }
   first_known <- function(...) {
     for (x in list(...)) if (!is.na(x)) return(x)
   }
   list(
-    D = D, data_dir = data_dir, fund_id = D$fund_id, fund_name = fund_name,
+    D = D, data_dir = data_dir, is_demo = is_demo, fund_id = D$fund_id, fund_name = fund_name,
     plan = plan, projection = projection,
     first_date    = min(D$daily$date),
     last_nav_date = max(D$daily$date),

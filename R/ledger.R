@@ -5,6 +5,10 @@
 #' Use it to work with the numbers directly in R.
 #'
 #' @inheritParams read_nav
+#' @param data_dir Folder holding your `transactions.csv` and price file.
+#'   Defaults to the `r401k.data_dir` option, or the bundled demo if that
+#'   isn't set. Set it once with `options(r401k.data_dir = "~/my401k")`, for
+#'   example in your `.Rprofile`.
 #' @param plan Plan settings from [plan_settings()].
 #' @return A list with:
 #'   * `daily`: one row per trading day, with units, cash, balance, the day's
@@ -19,7 +23,7 @@
 #' x <- load_401k()
 #' tail(x$daily[, c("date", "balance", "market")])
 #' x$quarters[, c("period", "fund_return", "money_weighted", "naive_change")]
-load_401k <- function(data_dir = demo_data_dir(), fund_id = NULL, plan = plan_settings()) {
+load_401k <- function(data_dir = default_data_dir(), fund_id = NULL, plan = plan_settings()) {
   if (is.null(fund_id)) fund_id <- detect_fund_id(data_dir)
   tx       <- read_transactions(data_dir)
   nav      <- read_nav(data_dir, fund_id)

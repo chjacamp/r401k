@@ -48,17 +48,34 @@ shiny::runApp(r401k::run_app(), launch.browser = TRUE)
 
 ## Use your own data
 
-Put two files in a folder of your own, then point the app at that folder:
+Keep your data in a folder of your own. Don't edit the demo files inside the installed package, because reinstalling the package replaces them.
+
+The easiest start is a copy of the demo:
 
 ```r
 library(r401k)
 
+use_example_data("~/my401k")   # copies transactions.csv and nav_1685.csv
+run_app("~/my401k")
+```
+
+Then replace those two files with your own, as described below, and describe your plan:
+
+```r
 run_app(
   "~/my401k",
   fund_name = "My Target Date Fund",
   plan = plan_settings(nonelective = 0.03, match_rate = 1, match_cap = 0.04, monthly_fee = 5)
 )
 ```
+
+To make `run_app()` and `load_401k()` open your folder without passing it each time, set the `r401k.data_dir` option, for example in your `.Rprofile`:
+
+```r
+options(r401k.data_dir = "~/my401k")
+```
+
+The folder holds two files:
 
 **1. Daily prices** as `nav_<fund_id>.csv`. The id is any name you like.
 

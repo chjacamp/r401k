@@ -5,6 +5,7 @@ app_server <- function(ctx) {
   fund_id       <- ctx$fund_id
   fund_name     <- ctx$fund_name
   data_dir      <- ctx$data_dir
+  is_demo       <- ctx$is_demo
   first_date    <- ctx$first_date
   last_nav_date <- ctx$last_nav_date
   data_through  <- ctx$data_through
@@ -372,10 +373,15 @@ app_server <- function(ctx) {
         ),
         h6("Where the data comes from"),
         tags$ul(
-          tags$li(sprintf("Fund: %s. Prices are read from %s, through %s.",
-                          fund_name, nav_path(data_dir, fund_id), long_date(max(D$nav$date)))),
-          tags$li(sprintf("Transactions are read from %s/transactions.csv, through %s. Each deposit buys units at the price on its date, and each fee sells units the same way.",
-                          data_dir, long_date(max(D$transactions$date)))),
+          if (is_demo) {
+            tags$li(sprintf("This is the bundled demo: made-up transactions priced against the published daily NAV of the %s. To use your own data, copy the demo to a folder you can edit with use_example_data(), then pass that folder to run_app().",
+                            fund_name))
+          } else {
+            tags$li(sprintf("Fund: %s. Data folder: %s.", fund_name, data_dir))
+          },
+          tags$li(sprintf("Prices from %s run through %s, and transactions from transactions.csv run through %s. Each deposit buys units at the price on its date, and each fee sells units the same way.",
+                          basename(nav_path(data_dir, fund_id)), long_date(max(D$nav$date)),
+                          long_date(max(D$transactions$date)))),
           if (nrow(transfer)) tags$li(sprintf("Includes %d transfer(s) between cash and the fund, first on %s.",
                                               nrow(transfer), long_date(min(transfer$date)))),
           tags$li(sprintf("After %s, units are held flat and priced daily, so later deposits are missing until you add them.",
