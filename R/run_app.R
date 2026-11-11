@@ -91,20 +91,42 @@ projection_settings <- function(annual_pay = NA, your_rate = NA, raise = 3, rate
        irs_limit_growth = irs_limit_growth)
 }
 
-# Everything the UI and server need, computed once when the app is built.
+# Everything the UI and server need for a data folder, computed once when the
+# app is built.
 app_context <- function(data_dir, fund_id, fund_name, plan, projection, tolerance = 1) {
   data_dir <- normalizePath(path.expand(data_dir), winslash = "/", mustWork = TRUE)
   D <- load_401k(data_dir, fund_id, plan, tolerance)
   is_demo <- identical(data_dir, normalizePath(demo_data_dir(), winslash = "/"))
-  if (is.null(fund_name)) {
-    fund_name <- if (D$fund_id == "1685") "Vanguard Target Retirement 2060 Trust Select" else D$fund_id
-  }
+  fund_name <- fund_name %||% default_fund_name(D$fund_id)
+  dashboard_context(
+    D, fund_name, plan, projection, is_demo = is_demo,
+    source_note = if (is_demo) {
+      sprintf("This is the bundled demo: made-up transactions priced against the published daily NAV of the %s. To use your own data, copy the demo to a folder you can edit with use_example_data(), then pass that folder to run_app().",
+              fund_name)
+    } else {
+      sprintf("Fund: %s. Data folder: %s.", fund_name, data_dir)
+    },
+    price_label = basename(nav_path(data_dir, D$fund_id)),
+    tx_label = "transactions.csv",
+    balances_hint = "Optional: add balances.csv to your data folder, with balances from your statements (date, balance) and this tab compares them with the rebuilt history."
+  )
+}
+
+# The same context from an account already rebuilt by build_401k(). The
+# labels say where the data came from in the method tab.
+dashboard_context <- function(D, fund_name = NULL, plan = plan_settings(),
+                              projection = projection_settings(), is_demo = FALSE,
+                              source_note = NULL, price_label = "the price file",
+                              tx_label = "your transactions", balances_hint = NULL) {
+  fund_name <- fund_name %||% default_fund_name(D$fund_id)
   first_known <- function(...) {
     for (x in list(...)) if (!is.na(x)) return(x)
   }
   list(
-    D = D, data_dir = data_dir, is_demo = is_demo, fund_id = D$fund_id, fund_name = fund_name,
+    D = D, is_demo = is_demo, fund_id = D$fund_id, fund_name = fund_name,
     plan = plan, projection = projection,
+    source_note = source_note %||% sprintf("Fund: %s.", fund_name),
+    price_label = price_label, tx_label = tx_label, balances_hint = balances_hint,
     first_date    = min(D$daily$date),
     last_nav_date = max(D$daily$date),
     data_through  = D$data_through,
@@ -112,3 +134,10 @@ app_context <- function(data_dir, fund_id, fund_name, plan, projection, toleranc
     default_rate  = first_known(projection$your_rate, infer_current_rate(D, plan) * 100, 6)
   )
 }
+
+default_fund_name <- function(fund_id) {
+  if (identical(fund_id, "1685")) "Vanguard Target Retirement 2060 Trust Select" else fund_id
+}
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
+

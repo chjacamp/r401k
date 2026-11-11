@@ -38,7 +38,9 @@ use_example_data <- function(path, overwrite = FALSE) {
 #' @examples
 #' list.files(demo_data_dir())
 demo_data_dir <- function() {
-  system.file("extdata", package = "r401k", mustWork = TRUE)
+  # packageName() rather than the literal name, so the web build's dependency
+  # scan doesn't take this for a dependency on the installed package.
+  system.file("extdata", package = utils::packageName(), mustWork = TRUE)
 }
 
 # Your folder if the r401k.data_dir option is set, otherwise the demo.

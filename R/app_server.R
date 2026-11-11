@@ -1,18 +1,19 @@
-# Dashboard server, built from the same context as app_ui().
+# Dashboard server for a data folder, built from the same context as app_ui().
 app_server <- function(ctx) {
+  function(input, output, session) dashboard_server("dash", ctx)
+}
+
+# Fills the pages from dashboard_panels() for one account.
+dashboard_server <- function(id, ctx) {
   D             <- ctx$D
   plan          <- ctx$plan
-  fund_id       <- ctx$fund_id
-  fund_name     <- ctx$fund_name
-  data_dir      <- ctx$data_dir
-  is_demo       <- ctx$is_demo
   first_date    <- ctx$first_date
   last_nav_date <- ctx$last_nav_date
   data_through  <- ctx$data_through
   default_pay   <- ctx$default_pay
   default_rate  <- ctx$default_rate
 
-  function(input, output, session) {
+  moduleServer(id, function(input, output, session) {
 
     output$warnings <- renderUI({
       if (!length(D$warnings)) return(NULL)
@@ -22,6 +23,7 @@ app_server <- function(ctx) {
     })
 
     range_sel <- reactive({
+      req(input$period)
       end <- last_nav_date
       if (input$period == "Custom") {
         req(input$custom)
@@ -395,14 +397,9 @@ app_server <- function(ctx) {
         ),
         h6("Where the data comes from"),
         tags$ul(
-          if (is_demo) {
-            tags$li(sprintf("This is the bundled demo: made-up transactions priced against the published daily NAV of the %s. To use your own data, copy the demo to a folder you can edit with use_example_data(), then pass that folder to run_app().",
-                            fund_name))
-          } else {
-            tags$li(sprintf("Fund: %s. Data folder: %s.", fund_name, data_dir))
-          },
-          tags$li(sprintf("Prices from %s run through %s, and transactions from transactions.csv run through %s. Each deposit buys units at the price on its date, and each fee sells units the same way.",
-                          basename(nav_path(data_dir, fund_id)), long_date(max(D$nav$date)),
+          tags$li(ctx$source_note),
+          tags$li(sprintf("Prices from %s run through %s, and transactions from %s run through %s. Each deposit buys units at the price on its date, and each fee sells units the same way.",
+                          ctx$price_label, long_date(max(D$nav$date)), ctx$tx_label,
                           long_date(max(D$transactions$date)))),
           if (nrow(transfer)) tags$li(sprintf("Includes %d transfer(s) between cash and the fund, first on %s.",
                                               nrow(transfer), long_date(min(transfer$date)))),
@@ -411,5 +408,5 @@ app_server <- function(ctx) {
         )
       )
     })
-  }
+  })
 }

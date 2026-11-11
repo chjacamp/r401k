@@ -60,7 +60,7 @@ test_that("a transfer out of the fund is split by fund holdings, not cash", {
 test_that("reconciliation marks dates outside the tolerance", {
   balances <- data.frame(date = as.Date(c("2024-01-05", "2024-01-08")), balance = c(316, 300))
   dir <- write_fixture(fixture_tx(), fixture_nav(), balances)
-  expect_warning(x <- load_401k(dir), "misses balances.csv")
+  expect_warning(x <- load_401k(dir), "misses your statement balance")
   expect_equal(x$recon$status, c("OK", "Off"))
   expect_equal(x$recon$balance_diff, c(0, 21))
   expect_length(x$warnings, 1)

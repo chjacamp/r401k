@@ -1,13 +1,14 @@
 Package: r401k
 Title: Separate 401(k) Deposits from Market Returns
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: person("chjacamp", role = c("aut", "cre"),
     email = "13806192+chjacamp@users.noreply.github.com")
 Description: A Shiny dashboard that rebuilds a 401(k) account from dated
     transactions and the fund's daily prices, then reports the fund's return,
     your money-weighted return, and the raw change in balance side by side,
     so deposits are never mistaken for investment gains. Also projects a
-    retirement balance under different contribution rates.
+    retirement balance under different contribution rates. A web version
+    imports a plan's transaction history from CSV, Excel, or pasted rows.
 License: MIT + file LICENSE
 URL: https://github.com/chjacamp/r401k
 BugReports: https://github.com/chjacamp/r401k/issues
@@ -18,13 +19,17 @@ Imports:
     dplyr (>= 1.1.0),
     DT,
     grDevices,
+    htmltools,
+    jsonlite,
     plotly,
     scales,
     shiny (>= 1.7.0),
     stats,
     utils
 Suggests:
-    testthat (>= 3.0.0)
+    readxl,
+    testthat (>= 3.0.0),
+    zip
 Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

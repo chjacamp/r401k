@@ -29,20 +29,24 @@ read_transactions <- function(data_dir) {
     stop("Missing ", path, ". See ?read_transactions for the expected columns.", call. = FALSE)
   }
   tx <- read.csv(path, stringsAsFactors = FALSE, colClasses = "character", na.strings = c("", "NA"))
+  check_transactions(tx, path)
+}
+
+# Checks transactions held in a data frame and returns them ready to use.
+# `where` names them in error messages. Problems are reported by file line,
+# counting the header, or by table row when `lines = FALSE`.
+check_transactions <- function(tx, where = "transactions", lines = TRUE) {
+  tx <- as.data.frame(tx, stringsAsFactors = FALSE)
   absent <- setdiff(c("date", "type", "amount"), names(tx))
   if (length(absent)) {
-    stop(path, " is missing column(s): ", paste(absent, collapse = ", "), call. = FALSE)
+    stop(where, " is missing column(s): ", paste(absent, collapse = ", "), call. = FALSE)
   }
+  if (!nrow(tx)) stop(where, " has no transactions.", call. = FALSE)
   if (is.null(tx$source))  tx$source  <- NA_character_
   if (is.null(tx$holding)) tx$holding <- NA_character_
+  reject <- row_rejecter(where, lines)
 
-  reject <- function(mask, problem) {
-    if (any(mask)) {
-      stop(sprintf("%s: %s on line(s) %s", path, problem,
-                   paste(head(which(mask) + 1, 10), collapse = ", ")), call. = FALSE)
-    }
-  }
-  tx$date   <- as.Date(tx$date, format = "%Y-%m-%d")
+  tx$date   <- as.Date(as.character(tx$date), format = "%Y-%m-%d")
   tx$amount <- suppressWarnings(as.numeric(gsub("[$,]", "", tx$amount)))
   tx$type   <- tolower(trimws(tx$type))
   reject(is.na(tx$date), "date isn't YYYY-MM-DD")
@@ -52,13 +56,13 @@ read_transactions <- function(data_dir) {
          "contributions and rollovers must be positive")
   reject(tx$type == "withdrawal" & tx$amount >= 0, "withdrawals must be negative")
 
-  tx$holding <- tolower(trimws(tx$holding))
+  tx$holding <- blank_to_na(tolower(trimws(tx$holding)))
   blank <- is.na(tx$holding)
   tx$holding[blank] <- ifelse(tx$type[blank] == "dividend", "cash", "fund")
   reject(!tx$holding %in% c("fund", "cash"), "holding must be fund or cash")
 
   money_in <- tx$type %in% c("contribution", "rollover")
-  tx$source <- trimws(tx$source)
+  tx$source <- blank_to_na(trimws(tx$source))
   tx$source[money_in & is.na(tx$source)] <- "Employee"
   tx$source[!money_in] <- NA_character_
   tx$who <- ifelse(grepl("^employer", tx$source, ignore.case = TRUE), "employer", "employee")
@@ -70,13 +74,41 @@ read_transactions <- function(data_dir) {
 read_balances <- function(data_dir) {
   path <- file.path(data_dir, "balances.csv")
   if (!file.exists(path)) return(NULL)
-  b <- read.csv(path, stringsAsFactors = FALSE)
+  check_balances(read.csv(path, stringsAsFactors = FALSE, colClasses = "character"), path)
+}
+
+check_balances <- function(b, where = "balances", lines = TRUE) {
+  b <- as.data.frame(b, stringsAsFactors = FALSE)
   if (!all(c("date", "balance") %in% names(b))) {
-    stop(path, " needs at least columns named date and balance.", call. = FALSE)
+    stop(where, " needs at least columns named date and balance.", call. = FALSE)
   }
-  b$date <- as.Date(b$date)
+  if (!nrow(b)) return(NULL)
+  reject <- row_rejecter(where, lines)
+  b$date <- as.Date(as.character(b$date), format = "%Y-%m-%d")
+  reject(is.na(b$date), "date isn't YYYY-MM-DD")
+  as_number <- function(x) suppressWarnings(as.numeric(gsub("[$,%]", "", as.character(x))))
+  b$balance <- as_number(b$balance)
+  reject(is.na(b$balance), "balance isn't a number")
   for (col in c("units", "unit_price", "reported_return")) {
-    if (is.null(b[[col]])) b[[col]] <- NA_real_
+    b[[col]] <- if (is.null(b[[col]])) NA_real_ else as_number(b[[col]])
   }
   b[order(b$date), c("date", "balance", "units", "unit_price", "reported_return")]
+}
+
+# Stops with the first few offending lines or rows when `mask` is TRUE anywhere.
+row_rejecter <- function(where, lines = TRUE) {
+  function(mask, problem) {
+    mask <- mask %in% TRUE
+    if (any(mask)) {
+      stop(sprintf("%s: %s on %s %s", where, problem, if (lines) "line(s)" else "row(s)",
+                   paste(head(which(mask) + if (lines) 1 else 0, 10), collapse = ", ")),
+           call. = FALSE)
+    }
+  }
+}
+
+blank_to_na <- function(x) {
+  x <- as.character(x)
+  x[!is.na(x) & !nzchar(x)] <- NA_character_
+  x
 }

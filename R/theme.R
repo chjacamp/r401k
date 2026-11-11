@@ -9,6 +9,11 @@ HUE <- list(you = "#2a78d6", you_light = "#86b6ef", employer = "#eb6834",
 
 FONT <- "system-ui, -apple-system, 'Segoe UI', sans-serif"
 
+app_theme <- function() {
+  bs_theme(version = 5, bg = INK$page, fg = INK$primary, primary = HUE$you,
+           base_font = font_collection("system-ui", "-apple-system", "Segoe UI", "sans-serif"))
+}
+
 wash <- function(hex, alpha) {
   v <- grDevices::col2rgb(hex)
   sprintf("rgba(%d,%d,%d,%.2f)", v[1], v[2], v[3], alpha)
@@ -92,7 +97,7 @@ APP_CSS <- sprintf("
   .tile-value { font-size: 1.55rem; font-weight: 600; color: %s; line-height: 1.25; margin-top: 2px; }
   .tile-note { font-size: .78rem; color: %s; margin-top: 3px; }
   .chart-card { background: %s; border: 1px solid rgba(11,11,11,.10); box-shadow: none; }
-  .chart-card .card-header { background: transparent; border-bottom: 0; padding-bottom: 0; }
+  .chart-card .card-header { display: block; background: transparent; border-bottom: 0; padding-bottom: 0; }
   .card-title-text { font-weight: 600; color: %s; }
   .card-sub { font-size: .82rem; color: %s; }
   .stat-list { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; font-size: .9rem; }
@@ -106,3 +111,57 @@ APP_CSS <- sprintf("
 ", FONT, INK$grid, INK$surface, INK$secondary, INK$primary, INK$primary, HUE$you,
    INK$primary, INK$secondary, INK$surface, INK$secondary, INK$primary, INK$secondary,
    INK$surface, INK$primary, INK$secondary, INK$primary, INK$secondary)
+
+# Extra styles for the web app's demo banner and Your data tab.
+WEB_CSS <- sprintf("
+  .loading { color: %s; padding: 40px 0; text-align: center; }
+  .demo-banner { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline;
+    background: #eef5fd; border-left: 3px solid %s; border-radius: 6px; padding: 9px 14px;
+    margin: 8px 0 12px; font-size: .9rem; }
+  .demo-banner a { font-weight: 600; }
+  .data-page { max-width: 68rem; margin: 6px auto 40px; }
+  .data-page h4 { margin: 8px 0 6px; font-weight: 600; }
+  .data-page h5 { font-weight: 600; }
+  .step-help { color: %s; max-width: 52rem; }
+  .field-help { color: %s; font-size: .82rem; margin: -4px 0 10px; }
+  .step-alt { margin: -4px 0 14px; font-size: .9rem; }
+  .wiz-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 16px; }
+  .wiz-step { border: 1px solid %s; background: %s; color: %s; border-radius: 999px;
+    padding: 4px 12px 4px 4px; font-size: .84rem; display: inline-flex; align-items: center; gap: 6px; }
+  .wiz-step .num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%%;
+    background: %s; color: %s; font-size: .75rem; font-weight: 600; }
+  .wiz-step.done .num { background: %s; color: #fff; }
+  .wiz-step.active { border-color: %s; color: %s; font-weight: 600; }
+  .wiz-step.active .num { background: %s; color: #fff; }
+  .wiz-nav { position: sticky; bottom: 0; display: flex; justify-content: space-between; gap: 10px;
+    background: %s; border-top: 1px solid %s; padding: 12px 0; margin-top: 18px; z-index: 5; }
+  .wiz-card { background: %s; border: 1px solid rgba(11,11,11,.10); box-shadow: none; margin-bottom: 14px; }
+  .wiz-card .card-header { display: block; background: transparent; border-bottom: 0; padding-bottom: 0; }
+  .start-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 14px 0; }
+  .start-grid .card-body { display: flex; flex-direction: column; }
+  .start-grid .card-body p { color: %s; font-size: .9rem; flex: 1; }
+  .status-card { background: %s; border: 1px solid rgba(11,11,11,.10); border-radius: 8px; padding: 16px 18px; }
+  .status-card p { margin-bottom: 10px; }
+  .status-actions, .finish-actions, .table-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .privacy-note { font-size: .86rem; color: %s; border-left: 3px solid %s; padding: 4px 12px; margin: 6px 0 18px; }
+  .msg { border-radius: 6px; padding: 9px 14px; margin: 8px 0; font-size: .9rem; }
+  .msg-ok { background: #effaf5; border-left: 3px solid %s; }
+  .msg-warn { background: #fffaf0; border-left: 3px solid #fab219; }
+  .msg-error { background: #fdf0f0; border-left: 3px solid %s; }
+  .msg .totals { color: %s; font-size: .84rem; margin-top: 3px; }
+  ul.notes { font-size: .86rem; color: %s; margin: 6px 0; }
+  .cat-table { width: 100%%; border-collapse: collapse; font-size: .88rem; margin-bottom: 8px; }
+  .cat-table th { font-weight: 600; color: %s; border-bottom: 1px solid %s; padding: 6px 8px; }
+  .cat-table td { border-bottom: 1px solid %s; padding: 4px 8px; vertical-align: middle; }
+  .cat-table td .form-group { margin: 0; }
+  .cat-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cat-table td:last-child { min-width: 240px; }
+  details > summary { cursor: pointer; color: %s; font-size: .9rem; margin: 6px 0; }
+  .paste-box, .header-fix, .filter-box, .help-box { margin: 4px 0 12px; }
+  .help-box li { font-size: .88rem; margin-bottom: 4px; max-width: 56rem; }
+  .table-input .shiny-input-container { margin-bottom: 6px; }
+", INK$secondary, HUE$you, INK$secondary, INK$secondary,
+   INK$grid, INK$surface, INK$secondary, INK$grid, INK$secondary, HUE$market,
+   HUE$you, INK$primary, HUE$you, INK$page, INK$grid, INK$surface, INK$secondary,
+   INK$surface, INK$secondary, HUE$market, HUE$market, HUE$loss, INK$secondary, INK$secondary,
+   INK$secondary, INK$grid, INK$grid, HUE$you)

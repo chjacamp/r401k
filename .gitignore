@@ -14,3 +14,6 @@ rsconnect/
 
 # Local tooling
 .claude/
+
+# Web build output
+_site/

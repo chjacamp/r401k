@@ -31,9 +31,15 @@
 load_401k <- function(data_dir = default_data_dir(), fund_id = NULL, plan = plan_settings(),
                       tolerance = 1) {
   if (is.null(fund_id)) fund_id <- detect_fund_id(data_dir)
-  tx       <- read_transactions(data_dir)
-  nav      <- read_nav(data_dir, fund_id)
-  balances <- read_balances(data_dir)
+  build_401k(read_transactions(data_dir), read_nav(data_dir, fund_id), read_balances(data_dir),
+             fund_id = fund_id, plan = plan, tolerance = tolerance)
+}
+
+# Rebuilds an account from checked transactions, prices, and optional
+# balances, wherever they came from. Data problems are returned in
+# `warnings` and, when `warn` is TRUE, also raised as R warnings.
+build_401k <- function(tx, nav, balances = NULL, fund_id = "fund", plan = plan_settings(),
+                       tolerance = 1, warn = TRUE) {
   ledger   <- build_ledger(tx, nav)
   daily    <- build_daily(ledger, nav)
   through  <- min(max(c(tx$date, balances$date)), max(nav$date))
@@ -44,7 +50,7 @@ load_401k <- function(data_dir = default_data_dir(), fund_id = NULL, plan = plan
   D$sources  <- source_balances(ledger, nav, D$quarters$end)
   D$recon    <- reconciliation(D, tolerance)
   D$warnings <- data_warnings(D, tolerance)
-  for (w in D$warnings) warning(w, call. = FALSE)
+  if (warn) for (w in D$warnings) warning(w, call. = FALSE)
   D
 }
 

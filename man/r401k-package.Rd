@@ -6,7 +6,7 @@
 \alias{r401k-package}
 \title{r401k: Separate 401(k) Deposits from Market Returns}
 \description{
-A Shiny dashboard that rebuilds a 401(k) account from dated transactions and the fund's daily prices, then reports the fund's return, your money-weighted return, and the raw change in balance side by side, so deposits are never mistaken for investment gains. Also projects a retirement balance under different contribution rates.
+A Shiny dashboard that rebuilds a 401(k) account from dated transactions and the fund's daily prices, then reports the fund's return, your money-weighted return, and the raw change in balance side by side, so deposits are never mistaken for investment gains. Also projects a retirement balance under different contribution rates. A web version imports a plan's transaction history from CSV, Excel, or pasted rows.
 }
 \seealso{
 Useful links:

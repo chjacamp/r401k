@@ -19,16 +19,27 @@ read_nav <- function(data_dir, fund_id = NULL) {
   if (!file.exists(path)) {
     stop("No price file at ", path, ". It needs two columns: date, nav.", call. = FALSE)
   }
-  nav <- read.csv(path, stringsAsFactors = FALSE)
+  check_nav(read.csv(path, stringsAsFactors = FALSE, colClasses = "character"), path)
+}
+
+# Checks daily prices held in a data frame with columns date and nav.
+check_nav <- function(nav, where = "prices") {
+  nav <- as.data.frame(nav, stringsAsFactors = FALSE)
   if (!all(c("date", "nav") %in% names(nav))) {
-    stop(path, " needs columns named date and nav.", call. = FALSE)
+    stop(where, " needs columns named date and nav.", call. = FALSE)
   }
-  nav <- data.frame(date = as.Date(nav$date), nav = as.numeric(nav$nav))
+  if (!nrow(nav)) stop(where, " has no prices.", call. = FALSE)
+  nav <- data.frame(
+    date = as.Date(as.character(nav$date), tryFormats = c("%Y-%m-%d", "%Y/%m/%d"), optional = TRUE),
+    nav  = suppressWarnings(as.numeric(as.character(nav$nav)))
+  )
   if (anyNA(nav$date) || anyNA(nav$nav) || any(nav$nav <= 0)) {
-    stop(path, " has a blank date, a blank price, or a price at or below zero.", call. = FALSE)
+    stop(where, " has a blank date, a blank price, or a price at or below zero.", call. = FALSE)
   }
-  if (any(duplicated(nav$date))) stop(path, " lists the same date twice.", call. = FALSE)
-  nav[order(nav$date), ]
+  if (any(duplicated(nav$date))) stop(where, " lists the same date twice.", call. = FALSE)
+  nav <- nav[order(nav$date), ]
+  rownames(nav) <- NULL
+  nav
 }
 
 #' Add new prices to a price file

@@ -123,7 +123,7 @@ data_warnings <- function(D, tolerance = 1) {
   if (!is.null(D$recon) && any(D$recon$status == "Off")) {
     off <- D$recon[D$recon$status == "Off", ]
     out <- c(out, sprintf(
-      "The rebuilt balance misses balances.csv by more than %s on %s. A transaction may be missing or mistyped.",
+      "The rebuilt balance misses your statement balance by more than %s on %s. A transaction may be missing or mistyped.",
       usd2(tolerance), paste(format(off$date), collapse = ", ")))
   }
   out

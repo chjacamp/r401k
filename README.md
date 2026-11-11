@@ -16,6 +16,23 @@ This package rebuilds your account from its transactions and your fund's daily p
 
 Any account you can describe as dated transactions in a single fund will work.
 
+## Use it in your browser
+
+The web version needs no install: **<https://chjacamp.github.io/r401k/>**
+
+It runs entirely on your computer. The page loads R itself into your browser through WebAssembly, so the files you add are read there and never uploaded. The first visit downloads R and the packages the dashboard uses, which takes a little while; later visits load from your browser's cache.
+
+It opens on the demo. To use your own data, open the **Your data** tab, which walks you through six steps:
+
+1. **Import transactions** from your plan's website: a CSV or Excel download, or rows copied from a table on the page. Say which columns hold the date and amount, then what each kind of row is (your contribution, employer match, fee, and so on). The first guesses come from the wording. Fees listed as positive numbers are flipped, and rows for other investments can be left out.
+2. **Check transactions** in a table you can edit. If your history starts after your account did, add your starting balance.
+3. **Add prices:** your fund's daily price history, as a file or pasted rows.
+4. **Describe your plan:** your employer's contributions and the plan's fees.
+5. **Check against statements** (optional): a few balances from your statements, compared with the rebuilt history.
+6. **Finish:** open the dashboard. Your data stays in this browser for next time, and you can download it as a zip that `run_app()` can open.
+
+To run the same web version from R, use `r401k::run_web_app()`.
+
 ## Install
 
 ```r
@@ -47,6 +64,8 @@ shiny::runApp(r401k::run_app(), launch.browser = TRUE)
 - **Method and checks:** what each number means, and optionally how the rebuilt history compares with balances from your statements.
 
 ## Use your own data
+
+The web version's import walks you through this, and its download is a ready-made data folder. To set one up by hand instead, read on.
 
 Keep your data in a folder of your own. Don't edit the demo files inside the installed package, because reinstalling the package replaces them.
 
@@ -151,9 +170,9 @@ x$daily      # one row per trading day: units, balance, deposits, market gain
 
 ## Price data
 
-The demo's price file is the trust's published daily NAV, included so the demo runs offline. The package has no code that downloads prices. For your own fund, supply prices yourself or through `update_nav()`, and check the terms of any source you automate, since many fund websites restrict automated access.
+The demo's price file is the trust's published daily NAV, included so the demo runs offline. Neither the package nor the web version has code that downloads prices. For your own fund, supply prices yourself or through `update_nav()`, and check the terms of any source you automate, since many fund websites restrict automated access.
 
-Your data stays in your own folder. The package only reads it.
+Your data stays in your own folder, or in the web version, in your own browser. The package only reads it.
 
 ## How the numbers work
 
@@ -164,6 +183,16 @@ After your last transaction, units are held flat and priced daily, so later depo
 Transactions dated on a weekend or holiday are priced on the next trading day. If a transaction waits more than 4 days for a price, the dashboard flags it, since that usually means the price file is missing days.
 
 Balances by money source are an estimate. Transactions say who funded each deposit, but not which source a fee, withdrawal, or transfer came out of, so those are spread in proportion to what each source holds.
+
+## Building the web version
+
+`tools/build_site.R` turns the package into a static site with [shinylive](https://posit-dev.github.io/r-shinylive/): the package's R code and the demo are copied into a Shiny app that runs in the browser on webR. On every push to `main`, `.github/workflows/pages.yml` runs the tests, builds the site, and publishes it to GitHub Pages. To build it yourself:
+
+```bash
+Rscript tools/build_site.R _site
+```
+
+Then serve the folder with any static file server, for example `httpuv::runStaticServer("_site")`.
 
 ## License
 
